@@ -58,3 +58,74 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
             })
 
         return attrs
+
+class SubstituteResponseSerializer(serializers.Serializer):
+    decision = serializers.ChoiceField(
+        choices=["accepted", "declined"]
+    )
+    note = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+    )
+
+
+class LeaveDecisionSerializer(serializers.Serializer):
+    stage = serializers.ChoiceField(
+        choices=[
+            "unit_head",
+            "establishment",
+            "final_sanction",
+            "director_sanction",
+        ]
+    )
+    decision = serializers.ChoiceField(
+        choices=[
+            "approve",
+            "reject",
+            "recommend",
+            "not_recommend",
+            "route",
+        ]
+    )
+    note = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+    )
+
+
+class SubstituteResponseSerializer(serializers.Serializer):
+    decision = serializers.ChoiceField(
+        choices=["accepted", "declined"]
+    )
+    note = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+    )
+
+
+class LeaveDecisionSerializer(serializers.Serializer):
+    stage = serializers.ChoiceField(
+        choices=[
+            "unit_head",
+            "establishment",
+            "final_sanction",
+            "director_sanction",
+        ]
+    )
+    decision = serializers.ChoiceField(
+        choices=[
+            "approve",
+            "reject",
+            "recommend",
+            "not_recommend",
+            "route",
+        ]
+    )
+    note = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+    )

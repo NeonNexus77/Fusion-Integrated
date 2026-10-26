@@ -34,6 +34,85 @@
       "scope_permissions": [],
       "system_permissions": []
     },
+    "elm": {
+      "grants": {
+        "employee": [
+          "elm.application.apply",
+          "elm.application.view_self",
+          "elm.application.withdraw",
+          "elm.substitute.respond"
+        ],
+        "establishment_officer": [
+          "elm.application.review",
+          "elm.application.view_self",
+          "elm.establishment.route"
+        ],
+        "unit_head": [
+          "elm.application.review",
+          "elm.application.view_self",
+          "elm.establishment.route"
+        ]
+      },
+      "module_grants": [
+        "employee",
+        "establishment_officer",
+        "unit_head"
+      ],
+      "nav": {
+        "base_path": "/elm",
+        "icon": "CalendarCheck",
+        "items": [
+          {
+            "code": "elm.applications",
+            "icon": "Calendar",
+            "label": "My Leave Applications",
+            "required_permission": "elm.application.view_self",
+            "sort_order": 10,
+            "to": "/elm/applications"
+          },
+          {
+            "code": "elm.apply",
+            "icon": "CalendarPlus",
+            "label": "Apply for Leave",
+            "required_permission": "elm.application.apply",
+            "sort_order": 20,
+            "to": "/elm/apply"
+          }
+        ],
+        "label": "Employee Leave Management",
+        "nav_section": "Employee Services",
+        "sort_order": 20,
+        "status": "active"
+      },
+      "permissions": [
+        {
+          "code": "elm.application.view_self",
+          "label": "View one's own leave applications"
+        },
+        {
+          "code": "elm.application.apply",
+          "label": "Submit leave applications"
+        },
+        {
+          "code": "elm.application.withdraw",
+          "label": "Withdraw a pending leave application"
+        },
+        {
+          "code": "elm.application.review",
+          "label": "Review and decide leave applications"
+        },
+        {
+          "code": "elm.substitute.respond",
+          "label": "Respond to substitute requests"
+        },
+        {
+          "code": "elm.establishment.route",
+          "label": "Route leave applications through Establishment"
+        }
+      ],
+      "scope_permissions": [],
+      "system_permissions": []
+    },
     "placement_cell": {
       "grants": {
         "Dean Academic": [

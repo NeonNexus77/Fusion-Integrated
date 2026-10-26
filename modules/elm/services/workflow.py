@@ -2,10 +2,12 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 
 from modules.elm.models import LeaveDecision, LeaveRequest, SubstituteResponse
-
+from modules.elm.services import authz
+from modules.directory.models import UserRef
 
 @transaction.atomic
 def respond_to_substitute(leave_request, actor, decision, note=""):
+    authz.require(actor, "elm.substitute.respond")
     if leave_request.status != LeaveRequest.Status.AWAITING_SUBSTITUTE:
         raise ValidationError("This request is not awaiting substitute consent.")
     if leave_request.substitute_id != actor.user_id:
@@ -17,9 +19,11 @@ def respond_to_substitute(leave_request, actor, decision, note=""):
     }:
         raise ValidationError("Invalid substitute response.")
 
+    substitute = UserRef.objects.get(user_id=actor.user_id)
+
     SubstituteResponse.objects.create(
         leave_request=leave_request,
-        substitute=actor,
+        substitute=substitute,
         decision=decision,
         note=note,
     )
@@ -35,17 +39,35 @@ def respond_to_substitute(leave_request, actor, decision, note=""):
 
 @transaction.atomic
 def decide_leave(leave_request, actor, stage, decision, note=""):
+    if stage == "establishment":
+        authz.require(actor, "elm.establishment.route")
+    else:
+        authz.require(actor, "elm.application.review")
     allowed = {
         LeaveRequest.Status.UNIT_HEAD_REVIEW: "unit_head",
         LeaveRequest.Status.ESTABLISHMENT_ROUTING: "establishment",
         LeaveRequest.Status.FINAL_SANCTION: "final_sanction",
         LeaveRequest.Status.DIRECTOR_SANCTION: "director_sanction",
     }
+
     if allowed.get(leave_request.status) != stage:
         raise ValidationError("This request is not awaiting this decision stage.")
 
-    if decision not in {"approve", "reject", "recommend", "not_recommend", "route"}:
-        raise ValidationError("Invalid decision.")
+    if stage == "unit_head":
+        if leave_request.category in {"CL", "RH"}:
+            if decision not in {"approve", "reject"}:
+                raise ValidationError(
+                    "Casual or restricted leave requires approve or reject."
+                )
+        elif decision not in {"recommend", "not_recommend"}:
+            raise ValidationError(
+                "Higher-sanction leave requires a recommendation."
+            )
+    elif stage == "establishment":
+        if decision != "route":
+            raise ValidationError("Establishment must route the request.")
+    elif decision not in {"approve", "reject"}:
+        raise ValidationError("Final sanction requires approve or reject.")
 
     LeaveDecision.objects.create(
         leave_request=leave_request,
@@ -58,12 +80,11 @@ def decide_leave(leave_request, actor, stage, decision, note=""):
     if stage == "unit_head":
         if leave_request.category in {"CL", "RH"}:
             leave_request.status = (
-                LeaveRequest.Status.APPROVED if decision == "approve"
+                LeaveRequest.Status.APPROVED
+                if decision == "approve"
                 else LeaveRequest.Status.REJECTED
             )
         else:
-            if decision not in {"recommend", "not_recommend"}:
-                raise ValidationError("Higher-sanction leave requires a recommendation.")
             leave_request.unit_head_recommended = decision == "recommend"
             leave_request.status = (
                 LeaveRequest.Status.ESTABLISHMENT_ROUTING
@@ -71,18 +92,41 @@ def decide_leave(leave_request, actor, stage, decision, note=""):
                 else LeaveRequest.Status.FINAL_SANCTION
             )
     elif stage == "establishment":
-        if decision != "route":
-            raise ValidationError("Establishment must route the request.")
         leave_request.status = LeaveRequest.Status.FINAL_SANCTION
     else:
-        if decision not in {"approve", "reject"}:
-            raise ValidationError("Final sanction requires approve or reject.")
         leave_request.status = (
-            LeaveRequest.Status.APPROVED if decision == "approve"
+            LeaveRequest.Status.APPROVED
+            if decision == "approve"
             else LeaveRequest.Status.REJECTED
         )
         leave_request.final_decision_by = actor
         leave_request.decision_note = note
 
     leave_request.save()
+    return leave_request
+
+@transaction.atomic
+def withdraw_leave(leave_request, actor):
+    authz.require(actor, "elm.application.withdraw")
+
+    if leave_request.employee_id != actor.user_id:
+        from core.api.exceptions import PermissionDeniedError
+        raise PermissionDeniedError(
+            "You can withdraw only your own application.",
+            code="permission_denied",
+        )
+
+    allowed_statuses = {
+        LeaveRequest.Status.AWAITING_SUBSTITUTE,
+        LeaveRequest.Status.APPLICANT_ACTION,
+        LeaveRequest.Status.UNIT_HEAD_REVIEW,
+    }
+
+    if leave_request.status not in allowed_statuses:
+        raise ValidationError(
+            "This application cannot be withdrawn in its current state."
+        )
+
+    leave_request.status = LeaveRequest.Status.WITHDRAWN
+    leave_request.save(update_fields=["status", "updated_at"])
     return leave_request

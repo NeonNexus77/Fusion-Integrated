@@ -13,6 +13,17 @@ For the intended taxonomy of modules not yet built, see
 |---|---|---|
 | `directory.user.search` | Search the institute directory | `Dean Academic`, `acadadmin`, `placement_chairman`, `placement_coordinator`, `placement_officer` |
 
+## `elm`
+
+| Code | What it allows | Held by |
+|---|---|---|
+| `elm.application.view_self` | View one's own leave applications | `employee`, `establishment_officer`, `unit_head` |
+| `elm.application.apply` | Submit leave applications | `employee` |
+| `elm.application.withdraw` | Withdraw a pending leave application | `employee` |
+| `elm.application.review` | Review and decide leave applications | `establishment_officer`, `unit_head` |
+| `elm.substitute.respond` | Respond to substitute requests | `employee` |
+| `elm.establishment.route` | Route leave applications through Establishment | `establishment_officer`, `unit_head` |
+
 ## `placement_cell`
 
 | Code | What it allows | Held by |
